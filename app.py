@@ -11,7 +11,7 @@ UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # API Key for OpenAI's GPT (replace with your own key)
-OPENAI_API_KEY = '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'
+OPENAI_API_KEY = 'add-api-key-here'
 
 # Route to handle assessment requests
 @app.route('/api/assess-student', methods=['POST'])
