@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+        header, footer {
+            text-align: center;
+            padding: 10px;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        nav li {
+            display: inline;
+            margin-right: 20px;
+        }
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <nav>
+        <ul>
+            <li>HOME</li>
+            <li>QUICK CHECK</li>
+            <li>DASHBOARD</li>
+            <li>ACCOUNT</li>
+        </ul>
+    </nav>
+    <hr>
+    <h1>Dashboard</h1>
+</header>
+
+<section>
+    <div class="button-container">
+        <button onclick="window.location.href='create-assignment.html'">Create New Assignment</button>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Assignment Name</th>
+                <th>Class Name</th>
+                <th>Blank Problem Set</th>
+                <th>Teacher Solution</th>
+                <th>Edit Assignment</th>
+                <th>Student Solutions</th> <!-- New Column for Student Solutions -->
+            </tr>
+        </thead>
+        <tbody id="assignmentTableBody">
+            <!-- Rows will be added here dynamically -->
+        </tbody>
+    </table>
+</section>
+
+<footer>
+    <h3>I'm him. Don't play with me</h3>
+    <ul>
+        <li><img src="Images/thegram.jpg" width="50mm"></li>
+    </ul>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fetch assignments from the server
+        fetch('http://127.0.0.1:5500/getAssignments')  // This URL fetches assignments
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch assignments');
+                }
+                return response.json();
+            })
+            .then(assignments => {
+                const tableBody = document.getElementById('assignmentTableBody');
+
+                assignments.forEach((assignment, index) => {
+                    const row = document.createElement('tr');
+
+                    // Dynamically populate the table with assignment data and file download links
+                    row.innerHTML = `
+                        <td>${assignment.assignmentName}</td>
+                        <td>${assignment.className}</td>
+                        <td>${assignment.blankProblemSet ? `<a href="${assignment.folderPath}/blankProblemSet${getFileExtension(assignment.blankProblemSet)}" download="BlankProblemSet">Download</a>` : 'N/A'}</td>
+                        <td>${assignment.teacherSolution ? `<a href="${assignment.folderPath}/teacherSolution${getFileExtension(assignment.teacherSolution)}" download="TeacherSolution">Download</a>` : 'N/A'}</td>
+                        <td><button onclick="editAssignment(${index})">Edit</button></td>
+                        <td><button onclick="viewStudentSolutions(${index})">View Student Solutions</button></td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error loading assignments:', error));
+    });
+
+
+    // Helper function to get file extension
+    function getFileExtension(filePath) {
+        return filePath ? filePath.match(/\.[0-9a-z]+$/i)[0] : '';
+    }
+
+    // Redirect to edit assignment page
+    function editAssignment(index) {
+        window.location.href = `edit-assignment.html?index=${index}`;
+    }
+
+    // Redirect to student solutions page
+    function viewStudentSolutions(index) {
+        window.location.href = `student-solutions.html?index=${index}`;
+    }
+</script>
+
+</body>
+</html>

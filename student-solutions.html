@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Solutions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+        header, footer {
+            text-align: center;
+            padding: 10px;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        nav li {
+            display: inline;
+            margin-right: 20px;
+        }
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0px -4px 10px rgba(0, 0, 0, 0.1);
+            border-top: 2px solid #ccc;
+        }
+        .popup input[type="text"],
+        .popup input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <nav>
+        <ul>
+            <li>HOME</li>
+            <li>QUICK CHECK</li>
+            <li>DASHBOARD</li>
+            <li>ACCOUNT</li>
+        </ul>
+    </nav>
+    <hr>
+    <h1 id="assignmentHeader">Student Solutions</h1>
+</header>
+
+<section>
+    <table>
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Student Solution</th>
+                <th>Assessment</th>
+            </tr>
+        </thead>
+        <tbody id="studentTableBody">
+            <!-- Student rows will be added dynamically -->
+        </tbody>
+    </table>
+
+    <div class="button-container">
+        <button onclick="window.location.href='dashboard.html'">Back to Dashboard</button>
+        <button onclick="showAddStudentPopup()">Add Student</button>
+    </div>
+
+    <div class="popup" id="addStudentPopup">
+        <h3>Add New Student</h3>
+        <label for="studentName">Student Name:</label>
+        <input type="text" id="studentName" placeholder="Enter student name">
+
+        <label for="studentSolution">Student Solution (File):</label>
+        <input type="file" id="studentSolution">
+
+        <button onclick="addStudent()">Add Student</button>
+        <button onclick="hideAddStudentPopup()">Cancel</button>
+    </div>
+</section>
+
+<footer>
+    <h3>I'm him. Don't play with me</h3>
+    <ul>
+        <li><img src="Images/thegram.jpg" width="50mm"></li>
+    </ul>
+</footer>
+
+<script>
+    const assignments = JSON.parse(localStorage.getItem('assignments')) || [];
+    const assignmentIndex = new URLSearchParams(window.location.search).get('index');
+    const assignment = assignments[assignmentIndex];
+
+    const studentSolutionsKey = `studentSolutions_${assignmentIndex}`;
+    let studentSolutions = JSON.parse(localStorage.getItem(studentSolutionsKey)) || [];
+
+    function showAddStudentPopup() {
+        document.getElementById('addStudentPopup').style.display = 'block';
+    }
+
+    function hideAddStudentPopup() {
+        document.getElementById('addStudentPopup').style.display = 'none';
+    }
+
+    async function addStudent() {
+        const studentName = document.getElementById('studentName').value;
+        const studentSolutionFile = document.getElementById('studentSolution').files[0];
+
+        if (!studentName || !studentSolutionFile) {
+            alert('Please provide both a student name and a solution file.');
+            return;
+        }
+
+        const studentSolutionBase64 = await fileToBase64(studentSolutionFile);
+        const newStudent = {
+            name: studentName,
+            solution: studentSolutionBase64
+        };
+
+        studentSolutions.push(newStudent);
+        localStorage.setItem(studentSolutionsKey, JSON.stringify(studentSolutions));
+
+        location.reload();
+    }
+
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function loadStudentTable() {
+        const tableBody = document.getElementById('studentTableBody');
+
+        studentSolutions.forEach((student, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${student.name}</td>
+                <td><a href="${student.solution}" download="student_solution_${index}">Download Solution</a></td>
+                <td><button onclick="viewAssessment(${index})">View Assessment</button></td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadStudentTable);
+
+    async function viewAssessment(studentIndex) {
+        const formData = new FormData();
+
+        if (assignment.blankProblemSet) {
+            const blankProblemSetBlob = await fetch(assignment.folderPath + '/blankProblemSet' + getFileExtension(assignment.blankProblemSet)).then(res => res.blob());
+            formData.append('blankProblemSet', blankProblemSetBlob);
+        }
+
+        if (assignment.teacherSolution) {
+            const teacherSolutionBlob = await fetch(assignment.folderPath + '/teacherSolution' + getFileExtension(assignment.teacherSolution)).then(res => res.blob());
+            formData.append('teacherSolution', teacherSolutionBlob);
+        }
+
+        const studentSolution = studentSolutions[studentIndex];
+        if (studentSolution.solution) {
+            const studentSolutionBlob = await fetch(studentSolution.solution).then(res => res.blob());
+            formData.append('studentSolution', studentSolutionBlob);
+        }
+
+        try {
+            const response = await fetch('http://localhost:5500/api/assess-student', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.assessment) {
+                localStorage.setItem('assessmentResult', data.assessment);
+                window.location.href = 'assessment-result.html';
+            } else {
+                alert(`Error: ${data.error}`);
+            }
+        } catch (error) {
+            console.error('Error assessing student:', error);
+            alert('Error generating assessment');
+        }
+    }
+
+    function getFileExtension(filePath) {
+        return filePath ? filePath.match(/\.[0-9a-z]+$/i)[0] : '';
+    }
+</script>
+
+</body>
+</html>

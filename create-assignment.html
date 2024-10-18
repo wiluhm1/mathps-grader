@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Assignment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+        }
+        header, footer {
+            text-align: center;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        nav li {
+            display: inline;
+            margin-right: 20px;
+        }
+        section {
+            margin: 20px;
+        }
+        input[type="text"],
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .submit-button {
+            background-color: #4CAF50;
+        }
+        .cancel-button {
+            background-color: #f44336; /* Red background for Cancel button */
+        }
+        .file-preview {
+            margin: 10px 0;
+            max-width: 150px;
+        }
+        .file-preview img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .file-preview a {
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <nav>
+        <ul>
+            <li>HOME</li>
+            <li>QUICK CHECK</li>
+            <li>DASHBOARD</li>
+            <li>ACCOUNT</li>
+        </ul>
+    </nav>
+    <hr>
+    <h1>Create New Assignment</h1>
+</header>
+
+<section>
+    <form id="assignmentForm" enctype="multipart/form-data" action="http://127.0.0.1:5500/uploadAssignment" method="POST">
+        <label for="assignmentName">Assignment Name:</label>
+        <input type="text" id="assignmentName" name="assignmentName" placeholder="Enter assignment name" required>
+
+        <label for="className">Class Name:</label>
+        <input type="text" id="className" name="className" placeholder="Enter class name" required>
+
+        <label for="blankProblemSet">Blank Problem Set (JPG, PNG, PDF):</label>
+        <div class="file-preview" id="blankProblemSetPreview"></div>
+        <input type="file" id="blankProblemSet" name="blankProblemSet" accept=".jpg,.png,.pdf">
+
+        <label for="teacherSolution">Teacher Solution (JPG, PNG, PDF):</label>
+        <div class="file-preview" id="teacherSolutionPreview"></div>
+        <input type="file" id="teacherSolution" name="teacherSolution" accept=".jpg,.png,.pdf">
+
+        <button type="submit" class="submit-button">Add Assignment</button>
+        <button type="button" class="cancel-button" onclick="cancelAssignment()">Cancel</button> <!-- Red Cancel button -->
+    </form>
+</section>
+
+<footer>
+    <h3>I'm him. Don't play with me</h3>
+    <ul>
+        <li><img src="Images/thegram.jpg" width="50mm"></li>
+    </ul>
+</footer>
+
+<script>
+    // Function to preview image or PDF
+    function previewFile(fileInput, previewElementId) {
+        const file = fileInput.files[0];
+        const previewElement = document.getElementById(previewElementId);
+        previewElement.innerHTML = ''; // Clear any previous preview
+
+        if (file) {
+            const fileType = file.type;
+            const reader = new FileReader();
+
+            // If it's an image, display it
+            if (fileType.startsWith('image/')) {
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.alt = 'Image Preview';
+                    previewElement.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+
+            // If it's a PDF, display a download link
+            } else if (fileType === 'application/pdf') {
+                reader.onload = function(e) {
+                    const link = document.createElement('a');
+                    link.href = e.target.result;
+                    link.textContent = 'View PDF';
+                    link.target = '_blank';
+                    previewElement.appendChild(link);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewElement.textContent = 'No preview available';
+            }
+        }
+    }
+
+    // Add event listeners to preview file upon selection
+    document.getElementById('blankProblemSet').addEventListener('change', function() {
+        previewFile(this, 'blankProblemSetPreview');
+    });
+
+    document.getElementById('teacherSolution').addEventListener('change', function() {
+        previewFile(this, 'teacherSolutionPreview');
+    });
+
+    // Cancel button function
+    function cancelAssignment() {
+        if (confirm("Are you sure you want to cancel?")) {
+            window.location.href = 'dashboard.html';  // Redirect to dashboard without saving
+        }
+    }
+
+    document.getElementById('assignmentForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const formData = new FormData();
+        formData.append('assignmentName', document.getElementById('assignmentName').value);
+        formData.append('className', document.getElementById('className').value);
+        formData.append('blankProblemSet', document.getElementById('blankProblemSet').files[0]);
+        formData.append('teacherSolution', document.getElementById('teacherSolution').files[0]);
+
+        try {
+            const response = await fetch('http://127.0.0.1:5500/uploadAssignment', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('Assignment added successfully!');
+                window.location.href = 'dashboard.html';
+            } else {
+                const errorData = await response.json();
+                alert('Failed to save assignment: ' + errorData.message);
+            }
+        } catch (error) {
+            console.error('Error uploading assignment:', error);
+            alert('An error occurred while saving the assignment.');
+        }
+    });
+
+</script>
+
+</body>
+</html>
